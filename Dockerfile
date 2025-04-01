@@ -1,31 +1,28 @@
-# Use lightweight Alpine Linux + Node.js
-FROM node:18-alpine
+# Use the official selenium/standalone-chrome image
+FROM selenium/standalone-chrome:latest
 
-# Install Chrome and dependencies
-RUN apk add --no-cache \
-    chromium \
-    chromium-chromedriver \
-    xvfb \
-    ttf-freefont \
-    udev \
-    tzdata
-
-# Set Chrome env variables
-ENV CHROME_BIN=/usr/bin/chromium-browser
-ENV CHROME_PATH=/usr/lib/chromium/
-
-# Set display for headless mode
-ENV DISPLAY=:99
+# Install Node.js
+USER root
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -sL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set working directory
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Copy package files and install dependencies
-COPY package*.json ./
-RUN npm install
+# Install selenium-webdriver for Node.js
+RUN npm init -y && npm install selenium-webdriver
 
-# Copy all files
+# Copy your Selenium test files to the container
 COPY . .
 
-# Start Xvfb (virtual display) and run tests
-CMD (Xvfb :99 -screen 0 1280x1024x24 &) && npm test
+# Set environment variable for headless execution
+ENV DISPLAY=:99
+
+# Start Xvfb for headless Chrome execution
+RUN Xvfb :99 -screen 0 1920x1080x24 &
+
+# Define the command to run your Selenium script
+CMD ["node", "googleTest.js"]
